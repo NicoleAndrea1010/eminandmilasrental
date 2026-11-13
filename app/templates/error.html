@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | Emin & Mila's Rentals{% endblock %}
+{% block content %}
+{% from "_icons.html" import icon %}
+<section class="section wrap error-page">
+  <span class="empty-icon">{{ icon('home', 26) }}</span>
+  <span class="eyebrow">PLEASE NOTE</span>
+  <h1>{{ title }}</h1>
+  <p>{{ message }}</p>
+  <a class="button" href="/properties">Browse available homes {{ icon('arrow-right', 16) }}</a>
+</section>
+{% endblock %}

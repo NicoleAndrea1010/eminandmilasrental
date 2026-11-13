@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  {% from "_icons.html" import icon %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Comfortable rental homes in Laguna, Philippines. Browse available homes and send an inquiry.">
+  <meta name="theme-color" content="#073f35">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <title>{% block title %}Emin & Mila's Rentals{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
+  <script defer src="{{ url_for('static', filename='site.js') }}"></script>
+</head>
+<body data-active-modal="{{ active_modal|default('', true) }}">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <nav class="nav wrap" aria-label="Main navigation">
+      <a class="brand" href="/" aria-label="Emin and Mila's Rentals home">
+        <span class="brand-mark">{{ icon('home', 25) }}</span>
+        <span><strong>EMIN & MILA'S</strong><small>RENTALS</small></span>
+      </a>
+      <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links">
+        <span data-menu-label>Menu</span>{{ icon('menu', 19, 'menu-icon') }}{{ icon('close', 19, 'close-icon') }}
+      </button>
+      <div class="nav-links" id="nav-links">
+        <a href="/" {% if request.path == '/' %}aria-current="page"{% endif %}>Home</a>
+        <a href="/properties" {% if request.path.startswith('/properties') %}aria-current="page"{% endif %}>Housing</a>
+        <a href="/about" {% if request.path == '/about' %}aria-current="page"{% endif %}>About</a>
+        <a class="button button-small" href="/contact">Get in touch {{ icon('arrow-right', 16) }}</a>
+      </div>
+    </nav>
+  </header>
+  <main id="main-content" tabindex="-1">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-top">
+      <div>
+        <a class="footer-brand" href="/">EMIN & MILA'S RENTALS</a>
+        <p>Thoughtful homes, clear details, and a warm welcome in Laguna.</p>
+      </div>
+      <div class="footer-links">
+        <a href="/properties">Properties</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a href="/terms">Terms &amp; Conditions</a>
+      </div>
+    </div>
+    <div class="wrap footer-bottom">© 2026 Emin & Mila’s Rentals. All rights reserved.</div>
+  </footer>
+</body>
+</html>

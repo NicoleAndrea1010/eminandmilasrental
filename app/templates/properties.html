@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Available Homes | Emin & Mila's Rentals{% endblock %}
+{% block content %}
+{% from "_icons.html" import icon %}
+<section class="page-hero">
+  <div class="wrap" data-reveal>
+    <span class="eyebrow">FIND YOUR NEXT HOME</span>
+    <h1>Find a home that fits your day-to-day.</h1>
+    <p>Browse available homes with clear monthly rent, useful details, and filters to narrow your search.</p>
+  </div>
+</section>
+<section class="section wrap listings-layout">
+  <aside class="filter-panel" data-reveal>
+    <h2>{{ icon('search', 20) }} Find a home</h2>
+    <form action="/properties" method="get" class="filter-form">
+      <label>Search housing
+        <span class="search-field">{{ icon('search', 17) }}<input type="search" name="search" value="{{ search }}" maxlength="120" placeholder="Name, location, or unit" autocomplete="off" aria-describedby="search-help"></span>
+        <span class="field-hint" id="search-help">Search by home name, area, or unit number.</span>
+      </label>
+      <label>Property type
+        <select name="property_type">
+          <option value="">Any property type</option>
+          {% for item in types %}<option value="{{ item }}" {% if item == property_type %}selected{% endif %}>{{ item }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Sort by
+        <select name="sort">
+          <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Recently updated</option>
+          <option value="rent_low" {% if sort == 'rent_low' %}selected{% endif %}>Rent: low to high</option>
+          <option value="rent_high" {% if sort == 'rent_high' %}selected{% endif %}>Rent: high to low</option>
+        </select>
+      </label>
+      <label>Bedrooms
+        <select name="bedrooms">
+          <option value="">Any bedrooms</option>
+          {% for value, label in [(1, '1 Bedroom'), (2, '2 Bedrooms'), (3, '3 Bedrooms'), (4, '4+ Bedrooms')] %}
+            <option value="{{ value }}" {% if bedrooms == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Furnishing
+        <select name="furnishing_status">
+          <option value="">Any furnishing</option>
+          {% for item in furnishings %}<option value="{{ item }}" {% if item == furnishing_status %}selected{% endif %}>{{ item }}</option>{% endfor %}
+        </select>
+      </label>
+      <div class="form-row">
+        <label>Min. monthly rent
+          <input type="number" name="minimum_rent" min="0" max="1000000000" step="0.01" value="{{ minimum_rent }}" placeholder="₱" aria-label="Minimum monthly rent">
+        </label>
+        <label>Max. monthly rent
+          <input type="number" name="maximum_rent" min="0" max="1000000000" step="0.01" value="{{ maximum_rent }}" placeholder="₱" aria-label="Maximum monthly rent">
+        </label>
+      </div>
+      <button class="button button-full" type="submit">{{ icon('search', 16) }} Apply filters</button>
+      <a class="reset-link" href="/properties">{{ icon('close', 14) }} Reset filters</a>
+    </form>
+  </aside>
+  <div class="listing-results">
+    {% if listing_error %}
+      <div class="notice notice-error">{{ listing_error }}</div>
+    {% elif listing and listing.properties %}
+      <div class="results-heading">
+        <div><span class="eyebrow">OUR LISTINGS</span><h2>Homes to explore</h2></div>
+        <span>Page {{ page }}</span>
+      </div>
+      <div class="property-grid">
+        {% for property in listing.properties %}
+          {% with card_index=loop.index0 %}{% include "_property_card.html" %}{% endwith %}
+        {% endfor %}
+      </div>
+      {% if previous_url or next_url %}
+      <nav class="pagination" aria-label="Listing pages">
+        {% if previous_url %}<a class="button button-quiet" href="{{ previous_url }}">{{ icon('arrow-left', 16) }} Previous</a>{% else %}<span></span>{% endif %}
+        <span>Page {{ page }}</span>
+        {% if next_url %}<a class="button button-quiet" href="{{ next_url }}">Next {{ icon('arrow-right', 16) }}</a>{% endif %}
+      </nav>
+      {% endif %}
+    {% elif listing %}
+      <div class="empty-state">
+        <span class="empty-icon">{{ icon('search', 25) }}</span>
+        <h2>{% if search or property_type or furnishing_status or bedrooms or minimum_rent or maximum_rent %}No housing matches these search and filter options.{% else %}No available properties are listed right now.{% endif %}</h2>
+        <p>Try adjusting your filters or check back later.</p>
+        <a class="button button-quiet" href="/properties">Clear search and filters</a>
+      </div>
+    {% else %}
+      <div class="empty-state"><h2>Listings are temporarily unavailable.</h2><p>Please try again shortly.</p></div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

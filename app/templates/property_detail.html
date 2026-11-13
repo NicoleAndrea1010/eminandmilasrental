@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}{{ unit.name }} | Emin & Mila's Rentals{% endblock %}
+{% block content %}
+{% from "_icons.html" import icon %}
+<section class="section wrap detail-section">
+  <a class="back-link" href="/properties">{{ icon('arrow-left', 16) }} All properties</a>
+  {% if sent == 'application' %}<div class="notice notice-success" role="status">Your application is on its way. We’ll be in touch about next steps.</div>{% endif %}
+  {% if sent == 'viewing' %}<div class="notice notice-success" role="status">Your viewing request is on its way. We’ll be in touch to confirm the time.</div>{% endif %}
+  <div class="detail-heading">
+    <div>
+      <span class="eyebrow">{{ unit.property_type or 'RENTAL HOME' }}{% if unit.furnishing_status %} · {{ unit.furnishing_status }}{% endif %}</span>
+      <h1>{{ unit.name }}</h1>
+      <p class="location">{{ icon('map-pin', 16) }} {{ unit.location or 'Laguna, Philippines' }}</p>
+    </div>
+    <div class="detail-price">₱{{ "{:,.0f}".format(unit.monthly_rent) }}<small> / month</small></div>
+  </div>
+  <div class="gallery">
+    <div class="gallery-main">
+      {% if unit.cover_image %}<img data-main-photo src="{{ unit.cover_image }}" alt="{{ unit.name }}" referrerpolicy="no-referrer">{% else %}<img data-main-photo src="{{ url_for('static', filename='images/photo3.jpg') }}" alt="{{ unit.name }}">{% endif %}
+    </div>
+    {% if unit.images|length > 1 %}
+    <div class="gallery-thumbs">
+      {% for image in unit.images[:5] %}<button type="button" data-gallery-image="{{ image }}" aria-label="Show photo {{ loop.index }}" aria-pressed="{{ 'true' if loop.first else 'false' }}"><img src="{{ image }}" alt="" loading="lazy" referrerpolicy="no-referrer"></button>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="detail-columns">
+    <div class="detail-main">
+      <div class="spec-bar">
+        <div><strong>{{ unit.bedrooms if unit.bedrooms is not none else '—' }}</strong><span>{{ icon('bed', 15) }} Bedrooms</span></div>
+        <div><strong>{{ unit.bathrooms if unit.bathrooms is not none else '—' }}</strong><span>{{ icon('bath', 15) }} Bathrooms</span></div>
+        <div><strong>{{ (unit.area_sqm|int|string) ~ ' m²' if unit.area_sqm else '—' }}</strong><span>{{ icon('ruler', 15) }} Floor area</span></div>
+        {% if unit.minimum_lease_months %}<div><strong>{{ unit.minimum_lease_months }} mo.</strong><span>{{ icon('calendar', 15) }} Minimum lease</span></div>{% endif %}
+      </div>
+      <section class="detail-block">
+        <h2>About this home</h2>
+        <p class="description">{{ unit.description or 'Contact us to learn more about this rental home.' }}</p>
+      </section>
+      {% if unit.amenities %}
+      <section class="detail-block">
+        <h2>Amenities</h2>
+        <ul class="tag-list">{% for item in unit.amenities %}<li>{{ item }}</li>{% endfor %}</ul>
+      </section>
+      {% endif %}
+      {% if unit.inclusions %}
+      <section class="detail-block">
+        <h2>Included</h2>
+        <ul class="tag-list">{% for item in unit.inclusions %}<li>{{ item }}</li>{% endfor %}</ul>
+      </section>
+      {% endif %}
+      <section class="detail-block rules">
+        <h2>Rental terms</h2>
+        <div class="term-grid">
+          {% if unit.security_deposit %}<p><span>Security deposit</span><strong>₱{{ "{:,.0f}".format(unit.security_deposit) }}</strong></p>{% endif %}
+          {% if unit.advance_rent_months %}<p><span>Advance rent</span><strong>{{ unit.advance_rent_months }} month{% if unit.advance_rent_months != 1 %}s{% endif %}</strong></p>{% endif %}
+          {% if unit.minimum_lease_months %}<p><span>Minimum lease</span><strong>{{ unit.minimum_lease_months }} months</strong></p>{% endif %}
+        </div>
+      </section>
+    </div>
+    <aside class="inquiry-card">
+      <span class="eyebrow">INTERESTED?</span>
+      <h2>Curious about this home?</h2>
+      <p>Choose a viewing time or tell us a little about your rental plans.</p>
+      <button class="button button-full" type="button" data-open-modal="viewing">{{ icon('calendar', 17) }} Schedule a viewing</button>
+      <button class="button button-secondary button-full" type="button" data-open-modal="application">{{ icon('key', 17) }} Apply for this home</button>
+      <a class="text-link" href="/contact?unit_id={{ unit.id }}">Ask a question {{ icon('arrow-right', 15) }}</a>
+    </aside>
+  </div>
+</section>
+
+<dialog class="form-dialog" data-modal="viewing">
+  <form class="dialog-content" method="post" action="/property/{{ unit.id }}/viewing" onsubmit="return confirm('Submit this viewing request?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="dialog-close" type="button" data-close-modal aria-label="Close">{{ icon('close', 19) }}</button>
+    <span class="eyebrow">VIEWING REQUEST</span>
+    <h2>Schedule a viewing</h2>
+    <p class="dialog-subtitle">{{ unit.name }}</p>
+    {% if active_modal == 'viewing' and form_error %}<div class="notice notice-error" role="alert">{{ form_error }}</div>{% endif %}
+    <div class="form-grid">
+      <label class="field-wide">Full name *
+        <input name="name" required minlength="2" maxlength="200" pattern="[^0-9]+" title="Use a name without numbers." value="{{ form_values.get('name', '') }}" autocomplete="name">
+      </label>
+      <label>Email address *
+        <input name="email" type="email" required maxlength="320" value="{{ form_values.get('email', '') }}" autocomplete="email">
+      </label>
+      <label>Phone number *
+        <input name="phone" type="tel" required pattern="09[0-9]{9}" minlength="11" maxlength="11" title="Enter 11 digits starting with 09." placeholder="09171234567" value="{{ form_values.get('phone', '') }}" autocomplete="tel">
+      </label>
+      <label>Preferred date *
+        <input name="viewing_date" type="date" min="{{ default_viewing }}" required value="{{ form_values.get('viewing_date', default_viewing) }}">
+      </label>
+      <label>Time slot *
+        <select name="time_slot" required>{% for slot in time_slots %}<option value="{{ slot }}" {% if form_values.get('time_slot', '10:00 AM - 11:00 AM') == slot %}selected{% endif %}>{{ slot }}</option>{% endfor %}</select>
+      </label>
+      <label>Intended lease (months) *
+        <input name="lease_months" type="number" min="1" max="120" step="1" required value="{{ form_values.get('lease_months', '12') }}">
+      </label>
+      <label class="field-wide">Message (optional)
+        <textarea name="message" maxlength="2000" rows="3">{{ form_values.get('message', '') }}</textarea>
+      </label>
+    </div>
+    <label class="consent"><input type="checkbox" name="consent" value="yes" required {% if form_values.get('consent') == 'yes' %}checked{% endif %}> I consent to share these contact details for rental inquiry purposes.</label>
+    <label class="consent terms-acceptance">
+      <input type="checkbox" name="terms" value="yes" required {% if form_values.get('terms') == 'yes' %}checked{% endif %}>
+      <span>I agree to the <a href="{{ url_for('terms') }}" target="_blank" rel="noopener">Draft Terms and Conditions</a>.</span>
+    </label>
+    <button class="button button-full" type="submit">Submit viewing request {{ icon('arrow-right', 16) }}</button>
+  </form>
+</dialog>
+
+<dialog class="form-dialog" data-modal="application">
+  <form class="dialog-content" method="post" action="/property/{{ unit.id }}/application" onsubmit="return confirm('Submit this rental application?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="dialog-close" type="button" data-close-modal aria-label="Close">{{ icon('close', 19) }}</button>
+    <span class="eyebrow">RENTAL APPLICATION</span>
+    <h2>Apply for this home</h2>
+    <p class="dialog-subtitle">{{ unit.name }}</p>
+    {% if active_modal == 'application' and form_error %}<div class="notice notice-error" role="alert">{{ form_error }}</div>{% endif %}
+    <div class="form-grid">
+      <label class="field-wide">Full name *
+        <input name="applicant_name" required minlength="2" maxlength="200" pattern="[^0-9]+" title="Use a name without numbers." value="{{ form_values.get('applicant_name', '') }}" autocomplete="name">
+      </label>
+      <label>Email address *
+        <input name="email" type="email" required maxlength="320" value="{{ form_values.get('email', '') }}" autocomplete="email">
+      </label>
+      <label>Phone number *
+        <input name="phone" type="tel" required pattern="09[0-9]{9}" minlength="11" maxlength="11" title="Enter 11 digits starting with 09." placeholder="09171234567" value="{{ form_values.get('phone', '') }}" autocomplete="tel">
+      </label>
+      <label>Monthly income (₱) *
+        <input name="monthly_income" type="number" min="0.01" max="1000000000" step="0.01" required value="{{ form_values.get('monthly_income', '') }}">
+      </label>
+      <label>Occupation / industry *
+        <input name="occupation" required minlength="2" maxlength="150" value="{{ form_values.get('occupation', '') }}">
+      </label>
+      <label>Target move-in date *
+        <input name="target_move_in_date" type="date" min="{{ minimum_move_in }}" required value="{{ form_values.get('target_move_in_date', default_move_in) }}">
+      </label>
+      <label>Lease duration (months) *
+        <input name="lease_months" type="number" min="1" max="120" step="1" required value="{{ form_values.get('lease_months', '12') }}">
+      </label>
+      <label>Number of occupants *
+        <input name="occupants" type="number" min="1" max="50" step="1" required value="{{ form_values.get('occupants', '1') }}">
+      </label>
+      <label class="field-wide">Additional notes (optional)
+        <textarea name="notes" maxlength="2000" rows="3">{{ form_values.get('notes', '') }}</textarea>
+      </label>
+    </div>
+    <label class="consent"><input type="checkbox" name="consent" value="yes" required {% if form_values.get('consent') == 'yes' %}checked{% endif %}> I confirm that the information provided is accurate and consent to processing my rental application.</label>
+    <label class="consent terms-acceptance">
+      <input type="checkbox" name="terms" value="yes" required {% if form_values.get('terms') == 'yes' %}checked{% endif %}>
+      <span>I agree to the <a href="{{ url_for('terms') }}" target="_blank" rel="noopener">Draft Terms and Conditions</a>.</span>
+    </label>
+    <button class="button button-full" type="submit">Submit application {{ icon('arrow-right', 16) }}</button>
+  </form>
+</dialog>
+{% endblock %}

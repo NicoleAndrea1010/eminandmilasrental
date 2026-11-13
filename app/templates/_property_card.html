@@ -1,0 +1,25 @@
+{% from "_icons.html" import icon %}
+<article class="property-card" data-reveal style="--card-index:{{ card_index|default(0) }}">
+  <a class="card-image" href="/property/{{ property.id }}">
+    {% if property.cover_image %}
+      <img src="{{ property.cover_image }}" alt="{{ property.name }}" loading="lazy" referrerpolicy="no-referrer">
+    {% else %}
+      <img src="{{ url_for('static', filename='images/photo3.jpg') }}" alt="Rental home interior" loading="lazy">
+    {% endif %}
+    <span class="availability">{{ icon('check', 14) }} Available</span>
+  </a>
+  <div class="card-body">
+    <div class="card-eyebrow">{{ property.property_type or 'Rental home' }}{% if property.furnishing_status %} · {{ property.furnishing_status }}{% endif %}</div>
+    <h3><a href="/property/{{ property.id }}">{{ property.name }}</a></h3>
+    <p class="location">{{ icon('map-pin', 15) }} {{ property.location or 'Laguna, Philippines' }}</p>
+    <div class="card-specs">
+      <span>{{ icon('bed', 16) }} {{ property.bedrooms if property.bedrooms is not none else '—' }} bed</span>
+      <span>{{ icon('bath', 16) }} {{ property.bathrooms if property.bathrooms is not none else '—' }} bath</span>
+      {% if property.area_sqm %}<span>{{ icon('ruler', 16) }} {{ property.area_sqm|int }} m²</span>{% endif %}
+    </div>
+    <div class="card-bottom">
+      <p class="price">₱{{ "{:,.0f}".format(property.monthly_rent) }} <small>/ month</small></p>
+      <a class="text-link" href="/property/{{ property.id }}">View details {{ icon('arrow-right', 15) }}</a>
+    </div>
+  </div>
+</article>

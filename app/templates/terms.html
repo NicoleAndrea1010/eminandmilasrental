@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Terms and Conditions | Emin & Mila's Rentals{% endblock %}
+{% block content %}
+<section class="section wrap terms-page">
+  <span class="eyebrow">PLEASE READ</span>
+  <h1>Terms and Conditions</h1>
+  <div class="notice notice-error terms-draft" role="note">
+    <strong>Draft for review — not approved legal terms.</strong>
+    This wording must be reviewed and approved before the site is used to accept
+    applications or agreements.
+  </div>
+  <section class="terms-section">
+    <h2>Using this website</h2>
+    <p>This website lets you browse rental listings and send questions,
+      application details, or viewing requests. Please provide accurate
+      information and use the website only for lawful purposes.</p>
+  </section>
+  <section class="terms-section">
+    <h2>Listings and availability</h2>
+    <p>Listing details, prices, availability, and images may change. A listing
+      or submitted inquiry does not reserve a home, guarantee approval, or create
+      a lease. A rental agreement exists only when the parties complete and sign
+      the applicable agreement.</p>
+  </section>
+  <section class="terms-section">
+    <h2>Applications and viewing requests</h2>
+    <p>Submitting an application or viewing request does not guarantee
+      acceptance or a confirmed appointment. We will contact you to discuss
+      next steps and confirm arrangements.</p>
+  </section>
+  <section class="terms-section">
+    <h2>Information you submit</h2>
+    <p>Contact details and information in your inquiry or application are used
+      to respond to you and process your request. Review the final privacy
+      information before publishing; do not submit information that is not
+      requested or necessary.</p>
+  </section>
+  <section class="terms-section">
+    <h2>Cookies and site availability</h2>
+    <p>The site uses a necessary session cookie to support form security. We aim
+      to keep the service available, but listings or features may be unavailable
+      during maintenance or service interruptions.</p>
+  </section>
+  <a class="button button-quiet" href="{{ url_for('contact') }}">Back to contact</a>
+</section>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}About Us | Emin & Mila's Rentals{% endblock %}
+{% block content %}
+{% from "_icons.html" import icon %}
+<section class="section wrap about-intro">
+  <div class="about-copy" data-reveal>
+    <span class="eyebrow">ABOUT EMIN & MILA'S</span>
+    <h1>A warm, personal approach to finding your next home.</h1>
+    <p>Emin and Mila’s Rentals provides well-maintained, comfortable rental housing in Laguna. We believe that finding a place to live should be simple, welcoming, and built on clear trust.</p>
+    <p>Browse our published housing collection, review practical property details, and submit an inquiry or viewing request directly through the website. We are dedicated to helping you find a home that feels just right.</p>
+    <a class="button" href="/properties">Explore housing {{ icon('arrow-right', 16) }}</a>
+  </div>
+  <div class="about-photo">
+    <img data-reveal src="{{ url_for('static', filename='images/photo3.jpg') }}" alt="A welcoming rental home interior">
+    <div class="photo-caption"><span>{{ icon('map-pin', 20) }}</span><div><strong>Laguna, Philippines</strong><small>Comfortable & reliable rental housing</small></div></div>
+  </div>
+</section>
+<section class="values-section">
+  <div class="wrap">
+    <span class="eyebrow">WHAT MATTERS TO US</span>
+    <h2 data-reveal>Rent with confidence</h2>
+    <div class="values-grid">
+      <article data-reveal><span class="value-icon">{{ icon('check', 22) }}</span><h3>Clear details</h3><p>Review rent, space, and practical details before you get in touch.</p></article>
+      <article data-reveal><span class="value-icon">{{ icon('home', 22) }}</span><h3>Available homes</h3><p>Browse rental homes currently listed on the site.</p></article>
+      <article data-reveal><span class="value-icon">{{ icon('message', 22) }}</span><h3>Direct inquiries</h3><p>Submit questions or request a viewing directly online.</p></article>
+    </div>
+  </div>
+</section>
+{% endblock %}
