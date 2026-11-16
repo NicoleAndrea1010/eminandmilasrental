@@ -4,29 +4,42 @@
 {% from "_icons.html" import icon %}
 <section class="section wrap contact-layout">
   <div class="contact-intro">
-    <span class="eyebrow">CONTACT</span>
+    <span class="eyebrow contact-eyebrow">A PERSONAL WELCOME</span>
     <h1>Let’s find the right home for you.</h1>
     <p>Looking for a place in Laguna? Tell us what matters to you, and we’ll help you explore your options.</p>
     {% if unit %}<div class="selected-property"><span class="eyebrow">YOUR SELECTED HOME</span><strong>{{ unit.name }}</strong><span>{{ unit.location }}</span></div>{% endif %}
-    <div class="contact-promise" data-reveal><span>{{ icon('shield-check', 22) }}</span><p>Your details are used to respond to your rental inquiry.</p></div>
+    <article class="contact-feature" data-reveal>
+      <img src="{{ url_for('static', filename='images/photo1.jpg') }}" alt="A bright, welcoming rental home interior">
+      <div class="contact-feature-copy">
+        <span class="contact-feature-badge">{{ icon('sparkle', 14) }} DIRECT PROPERTY INQUIRIES</span>
+        <h2>Thoughtful homes. Personal help.</h2>
+        <p>Share what you’re looking for. Our team will follow up about your rental inquiry.</p>
+      </div>
+    </article>
+    <div class="contact-promise" data-reveal>
+      <span>{{ icon('shield-check', 22) }}</span>
+      <p>Your details are used to respond to your rental inquiry.</p>
+    </div>
   </div>
   <div class="contact-form-card" data-reveal>
     {% if sent %}<div class="notice notice-success" role="status">Thanks for reaching out. Your inquiry was sent successfully.</div>{% endif %}
     {% if error %}<div class="notice notice-error" role="alert">{{ error }}</div>{% endif %}
+    <span class="eyebrow">LET’S TALK</span>
     <h2>Send an inquiry</h2>
+    <p class="contact-form-intro">A few details will help us point you in the right direction.</p>
     <form method="post" action="/contact" onsubmit="return confirm('Send this rental inquiry?')">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       {% if unit %}<input type="hidden" name="unit_id" value="{{ unit.id }}">{% endif %}
-      <label>Full name *
+      <label><span class="field-label">{{ icon('user', 16) }} Full name *</span>
         <input name="name" required minlength="2" maxlength="200" pattern="[^0-9]+" title="Use a name without numbers." value="{{ values.get('name', '') }}" autocomplete="name">
       </label>
-      <label>Email address *
+      <label><span class="field-label">{{ icon('mail', 16) }} Email address *</span>
         <input name="email" type="email" required maxlength="320" value="{{ values.get('email', '') }}" autocomplete="email">
       </label>
-      <label>Phone number (09XXXXXXXXX) *
+      <label><span class="field-label">{{ icon('phone', 16) }} Phone number (09XXXXXXXXX) *</span>
         <input name="phone" type="tel" required pattern="09[0-9]{9}" minlength="11" maxlength="11" title="Enter 11 digits starting with 09." placeholder="09171234567" value="{{ values.get('phone', '') }}" autocomplete="tel">
       </label>
-      <label>Inquiry details *
+      <label><span class="field-label">{{ icon('message', 16) }} Inquiry details *</span>
         <textarea name="message" required minlength="10" maxlength="2000" rows="5" placeholder="Tell us about your preferred location, budget, or questions." aria-describedby="message-help">{{ values.get('message', '') }}</textarea>
         <span class="field-hint" id="message-help">Please include at least 10 characters (up to 2,000).</span>
       </label>
