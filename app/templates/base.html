@@ -8,8 +8,8 @@
   <meta name="theme-color" content="#073f35">
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <title>{% block title %}Emin & Mila's Rentals{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
-  <script defer src="{{ url_for('static', filename='site.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='site.css', v='2') }}">
+  <script defer src="{{ url_for('static', filename='site.js', v='4') }}"></script>
 </head>
 <body data-active-modal="{{ active_modal|default('', true) }}">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -24,7 +24,7 @@
       </button>
       <div class="nav-links" id="nav-links">
         <a href="/" {% if request.path == '/' %}aria-current="page"{% endif %}>Home</a>
-        <a href="/properties" {% if request.path.startswith('/properties') %}aria-current="page"{% endif %}>Housing</a>
+        <a href="/properties" {% if request.path.startswith('/properties') %}aria-current="page"{% endif %}>Properties</a>
         <a href="/about" {% if request.path == '/about' %}aria-current="page"{% endif %}>About</a>
         <a class="button button-small" href="/contact">Get in touch {{ icon('arrow-right', 16) }}</a>
       </div>

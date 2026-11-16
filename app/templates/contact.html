@@ -31,16 +31,16 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       {% if unit %}<input type="hidden" name="unit_id" value="{{ unit.id }}">{% endif %}
       <label><span class="field-label">{{ icon('user', 16) }} Full name *</span>
-        <input name="name" required minlength="2" maxlength="200" pattern="[^0-9]+" title="Use a name without numbers." value="{{ values.get('name', '') }}" autocomplete="name">
+        <input name="name" required minlength="2" maxlength="100" data-normalize-uppercase value="{{ values.get('name', '') }}" autocomplete="name">
       </label>
       <label><span class="field-label">{{ icon('mail', 16) }} Email address *</span>
-        <input name="email" type="email" required maxlength="320" value="{{ values.get('email', '') }}" autocomplete="email">
+        <input name="email" type="email" required maxlength="320" data-normalize-email value="{{ values.get('email', '') }}" autocomplete="email">
       </label>
-      <label><span class="field-label">{{ icon('phone', 16) }} Phone number (09XXXXXXXXX) *</span>
-        <input name="phone" type="tel" required pattern="09[0-9]{9}" minlength="11" maxlength="11" title="Enter 11 digits starting with 09." placeholder="09171234567" value="{{ values.get('phone', '') }}" autocomplete="tel">
+      <label><span class="field-label">{{ icon('phone', 16) }} Philippine mobile number *</span>
+        <input name="phone" type="tel" required maxlength="20" data-normalize-phone inputmode="tel" title="Use 09XXXXXXXXX or +639XXXXXXXXX." placeholder="09171234567 or +639171234567" value="{{ values.get('phone', '') }}" autocomplete="tel">
       </label>
       <label><span class="field-label">{{ icon('message', 16) }} Inquiry details *</span>
-        <textarea name="message" required minlength="10" maxlength="2000" rows="5" placeholder="Tell us about your preferred location, budget, or questions." aria-describedby="message-help">{{ values.get('message', '') }}</textarea>
+        <textarea name="message" required minlength="10" maxlength="2000" rows="5" data-normalize-whitespace placeholder="Tell us about your preferred location, budget, or questions." aria-describedby="message-help">{{ values.get('message', '') }}</textarea>
         <span class="field-hint" id="message-help">Please include at least 10 characters (up to 2,000).</span>
       </label>
       <label class="consent"><input type="checkbox" name="consent" value="yes" required {% if values.get('consent') == 'yes' %}checked{% endif %}> I consent to share these contact details for rental inquiry purposes.</label>

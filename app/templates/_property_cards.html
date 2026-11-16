@@ -1,0 +1,3 @@
+{% for property in properties %}
+  {% with card_index=loop.index0 %}{% include "_property_card.html" %}{% endwith %}
+{% endfor %}

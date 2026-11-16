@@ -54,10 +54,10 @@ class FakeRepository:
         self.last_filters = filters
         return ListingPage([self.property], has_next_page=self.has_next_page)
 
-    def fetch_property_types(self) -> list[str]:
+    def fetch_property_types(self, **_: object) -> list[str]:
         return ["Apartment", "Studio"]
 
-    def fetch_furnishing_statuses(self) -> list[str]:
+    def fetch_furnishing_statuses(self, **_: object) -> list[str]:
         return ["Furnished", "Unfurnished"]
 
     def fetch_property(self, property_id: str) -> Property | None:
@@ -365,6 +365,35 @@ def test_sqlite_repository_filters_sorts_pages_and_saves_inquiries(
     assert saved == ("Alex Example", "alex@example.com", "unit-2")
 
 
+def test_sqlite_listing_cache_refreshes_updated_rows(tmp_path) -> None:
+    database_path = tmp_path / "cached-rentals.sqlite3"
+    repository = SQLitePropertyRepository(database_path, TTLCache(60))
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            """
+            INSERT INTO properties (id, name, rent, updated_at)
+            VALUES ('unit-1', 'Garden Studio', 12000, '2026-03-01')
+            """
+        )
+
+    cached = repository.fetch_available_units(search="Garden", page_size=10)
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            """
+            INSERT INTO properties (id, name, rent, updated_at)
+            VALUES ('unit-2', 'Garden Loft', 15000, '2026-04-01')
+            """
+        )
+    still_cached = repository.fetch_available_units(search="Garden", page_size=10)
+    refreshed = repository.fetch_available_units(
+        search="Garden", page_size=10, force_refresh=True
+    )
+
+    assert len(cached.properties) == 1
+    assert len(still_cached.properties) == 1
+    assert {property_.id for property_ in refreshed.properties} == {"unit-1", "unit-2"}
+
+
 def csrf_from(response_text: str) -> str:
     match = re.search(r'name="csrf_token" value="([^"]+)"', response_text)
     assert match
@@ -414,6 +443,22 @@ def test_ttl_cache_loads_once_until_cleared() -> None:
     assert calls == 2
 
 
+def test_ttl_cache_can_force_refresh_an_existing_key() -> None:
+    cache = TTLCache(60)
+    calls = 0
+
+    def loader() -> int:
+        nonlocal calls
+        calls += 1
+        return calls
+
+    assert cache.get_or_load("properties", loader) == 1
+    assert cache.get_or_load("properties", loader) == 1
+    assert cache.get_or_load("properties", loader, force_refresh=True) == 2
+    assert cache.get_or_load("properties", loader) == 2
+    assert calls == 2
+
+
 def test_rate_limiter_releases_failed_submission_reservations() -> None:
     limiter = InquiryRateLimiter(1, 60)
     first = limiter.reserve("client")
@@ -440,6 +485,7 @@ def test_home_and_properties_render_with_filters() -> None:
     assert repository.last_filters["bedrooms"] == 1
     assert repository.last_filters["minimum_rent"] == 5000
     assert repository.last_filters["sort"] == "rent_low"
+    assert "Showing 1–1 properties" in listings.text
 
 
 def test_pagination_preserves_search_and_sort() -> None:
@@ -450,6 +496,64 @@ def test_pagination_preserves_search_and_sort() -> None:
 
     assert response.status_code == 200
     assert 'href="/properties?search=Garden&amp;sort=rent_low&amp;page=2"' in response.text
+
+
+def test_load_more_request_returns_cards_and_preserves_filters() -> None:
+    client, repository = build_client()
+    repository.has_next_page = True
+
+    response = client.get(
+        "/properties?search=Garden&sort=rent_low&page=2",
+        headers={"X-Requested-With": "XMLHttpRequest"},
+    )
+
+    assert response.status_code == 200
+    assert "Garden Studio" in response.text
+    assert "<html" not in response.text
+    assert response.headers["X-Last-Result"] == "13"
+    assert response.headers["X-Has-Next"] == "true"
+    assert response.headers["X-Next-Page"] == (
+        "/properties?search=Garden&sort=rent_low&page=3"
+    )
+
+
+def test_refresh_bypasses_cache_and_preserves_filters() -> None:
+    client, repository = build_client()
+
+    response = client.get(
+        "/properties?search=Garden&sort=rent_low&property_type=Studio&refresh=1"
+    )
+
+    assert response.status_code == 200
+    assert repository.last_filters["force_refresh"] is True
+    assert (
+        'href="/properties?search=Garden&amp;sort=rent_low&amp;property_type=Studio&amp;refresh=1"'
+        in response.text
+    )
+
+
+def test_refresh_parameter_rejects_unexpected_values() -> None:
+    client, repository = build_client()
+
+    response = client.get("/properties?refresh=true")
+
+    assert response.status_code == 422
+    assert not repository.last_filters
+
+
+@pytest.mark.parametrize(
+    "query",
+    ["minimum_rent=-1", "maximum_rent=1.001", "minimum_rent=1e3"],
+)
+def test_property_rent_filters_require_nonnegative_two_decimal_amounts(
+    query: str,
+) -> None:
+    client, repository = build_client()
+
+    response = client.get(f"/properties?{query}")
+
+    assert response.status_code == 422
+    assert not repository.last_filters
 
 
 def test_property_sort_rejects_unknown_options() -> None:
@@ -503,12 +607,11 @@ def test_contact_form_writes_to_repository_after_consent() -> None:
         "/contact",
         data={
             "csrf_token": token,
-            "name": "Alex Example",
-            "email": "alex@example.com",
-            "phone": "09171234567",
-            "message": "I would like to know more about this rental.",
+            "name": "  Alex   Example ",
+            "email": " Alex@Example.COM ",
+            "phone": " +63 (917) 123-4567 ",
+            "message": "I would like to   know more about this rental.",
             "consent": "yes",
-            "terms": "yes",
             "terms": "yes",
         },
         follow_redirects=False,
@@ -516,7 +619,12 @@ def test_contact_form_writes_to_repository_after_consent() -> None:
 
     assert response.status_code == 303
     assert response.headers["location"].endswith("/contact?sent=1")
+    assert repository.saved[0]["name"] == "ALEX EXAMPLE"
     assert repository.saved[0]["email"] == "alex@example.com"
+    assert repository.saved[0]["phone"] == "09171234567"
+    assert repository.saved[0]["message"] == (
+        "I would like to know more about this rental."
+    )
 
 
 def test_contact_form_rejects_missing_consent_without_saving() -> None:
@@ -643,7 +751,8 @@ def test_application_and_viewing_forms_submit_existing_inquiry_payloads() -> Non
     assert application_response.status_code == 303
     assert viewing_response.status_code == 303
     assert len(repository.saved) == 2
-    assert repository.saved[0]["extra_data"]["applicant_name"] == "Alex Example"
+    assert repository.saved[0]["extra_data"]["applicant_name"] == "ALEX EXAMPLE"
+    assert repository.saved[0]["extra_data"]["occupation"] == "DESIGNER"
     assert repository.saved[1]["extra_data"]["time_slot"] == "10:00 AM - 11:00 AM"
 
 
@@ -679,6 +788,35 @@ def test_repository_builds_server_side_filter_and_range_query() -> None:
     assert "monthly_rent.gte.5000" in params["and"]
     assert "monthly_rent.lte.20000" in params["and"]
     assert params["bedrooms"] == "gte.4"
+
+
+def test_repository_refresh_bypasses_cached_filtered_results() -> None:
+    requests: list[httpx.Request] = []
+    rows = [PROPERTY_ROW]
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=rows)
+
+    http_client = httpx.Client(
+        base_url="https://example.supabase.co/rest/v1/",
+        transport=httpx.MockTransport(handle),
+    )
+    repository = SupabasePropertyRepository(
+        http_client, "public_listings", TTLCache(60)
+    )
+    first = repository.fetch_available_units(search="Garden")
+    rows = [{**PROPERTY_ROW, "id": "unit-2"}]
+    cached = repository.fetch_available_units(search="Garden")
+    refreshed = repository.fetch_available_units(
+        search="Garden", force_refresh=True
+    )
+    http_client.close()
+
+    assert first.properties[0].id == "unit-1"
+    assert cached.properties[0].id == "unit-1"
+    assert refreshed.properties[0].id == "unit-2"
+    assert len(requests) == 2
 
 
 def test_repository_retries_exact_schema_only_for_missing_columns() -> None:
@@ -782,12 +920,18 @@ def test_contact_validation_covers_each_field() -> None:
         "phone": "09171234567",
         "message": "I would like to know more about this rental.",
         "consent": "yes",
+        "terms": "yes",
     }
     invalid_values = [
         ("name", "A1"),
+        ("name", "AAAA"),
+        ("name", "Alex$ Example"),
+        ("name", "A"),
+        ("name", "A" * 101),
         ("email", "not-an-email"),
         ("phone", "12345678901"),
         ("message", "short"),
+        ("message", "x" * 10),
         ("message", "x" * 2001),
         ("consent", "no"),
         ("terms", "no"),
@@ -796,6 +940,100 @@ def test_contact_validation_covers_each_field() -> None:
     for field, value in invalid_values:
         with pytest.raises(FormValidationError):
             _validate_contact({**valid, field: value})
+
+
+def test_contact_normalizes_supported_email_phone_name_and_message() -> None:
+    name, email, phone, message = _validate_contact(
+        {
+            "name": "  Ma.   Theresa O'Connor-Cruz  ",
+            "email": "  Alex.Example+Home@GMAIL.COM ",
+            "phone": "+63 (917) 123-4567",
+            "message": "  I   would like to   ask about this home.  ",
+            "consent": "yes",
+            "terms": "yes",
+        }
+    )
+
+    assert name == "MA. THERESA O'CONNOR-CRUZ"
+    assert email == "alex.example+home@gmail.com"
+    assert phone == "09171234567"
+    assert message == "I would like to ask about this home."
+
+
+@pytest.mark.parametrize(
+    "email",
+    [
+        "user@gmail",
+        "a..b@example.com",
+        ".user@example.com",
+        "user@example..com",
+        "user@mailinator.com",
+        "user@sub.tempmail.com",
+        "user@10minutemail.com",
+    ],
+)
+def test_contact_rejects_malformed_and_known_disposable_emails(email: str) -> None:
+    with pytest.raises(FormValidationError):
+        _validate_contact(
+            {
+                "name": "Alex Example",
+                "email": email,
+                "phone": "09171234567",
+                "message": "I would like to know more about this rental.",
+                "consent": "yes",
+                "terms": "yes",
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    ("phone", "normalized"),
+    [
+        ("0917-123-4567", "09171234567"),
+        ("+639171234567", "09171234567"),
+        ("09875555641", "09875555641"),
+    ],
+)
+def test_contact_accepts_and_normalizes_philippine_mobile_numbers(
+    phone: str, normalized: str
+) -> None:
+    result = _validate_contact(
+        {
+            "name": "Alex Example",
+            "email": "alex@example.edu.ph",
+            "phone": phone,
+            "message": "I would like to know more about this rental.",
+            "consent": "yes",
+            "terms": "yes",
+        }
+    )
+
+    assert result[2] == normalized
+
+
+@pytest.mark.parametrize(
+    "phone",
+    [
+        "09999999999",
+        "09000000000",
+        "09123456789",
+        "09876543210",
+        "+6391712345678",
+        "0917abc4567",
+    ],
+)
+def test_contact_rejects_dummy_or_invalid_philippine_mobile_numbers(phone: str) -> None:
+    with pytest.raises(FormValidationError):
+        _validate_contact(
+            {
+                "name": "Alex Example",
+                "email": "alex@example.com",
+                "phone": phone,
+                "message": "I would like to know more about this rental.",
+                "consent": "yes",
+                "terms": "yes",
+            }
+        )
 
 
 def test_application_validation_covers_each_field() -> None:
@@ -810,7 +1048,10 @@ def test_application_validation_covers_each_field() -> None:
     invalid_values = [
         ("monthly_income", "NaN"),
         ("monthly_income", "0"),
+        ("monthly_income", "50000.999"),
+        ("monthly_income", "50,00"),
         ("occupation", "x" * 151),
+        ("occupation", "AAAA"),
         ("target_move_in_date", (date.today() - timedelta(days=1)).isoformat()),
         ("target_move_in_date", "2025-12-31"),
         ("target_move_in_date", "20261130"),

@@ -77,7 +77,20 @@ The forms validate contact details, require consent and a confirmation step,
 and limit each client address to three successful/in-flight submissions per
 30 minutes by default. Change `INQUIRY_LIMIT` and `INQUIRY_WINDOW_SECONDS` to
 adjust this. The in-memory limiter and cache are per worker and reset on
-restart; use a shared store if deploying multiple workers or instances.
+restart; use a shared store if deploying multiple workers or instances. Listing
+results are cached for 90 seconds by filter/sort/page. The Properties page
+appends the next 12 matching homes as you scroll, with a **Load more homes**
+control as a fallback; use **Refresh results** to bypass the current cached
+entries when listings have just changed.
+
+Inquiry, viewing, and application forms normalize names and occupations to
+uppercase, lowercase email addresses, and normalize whitespace. They accept
+Philippine mobile numbers in `09...` or `+639...` format and store them as
+`09...`. Email domains are not restricted; malformed addresses and the common
+disposable domains `mailinator.com`, `tempmail.com`, and `10minutemail.com`
+(including subdomains) are rejected. Application income accepts at most two
+decimal places; booking dates must be in the future. The site has no passwords,
+age fields, or file uploads.
 
 ## Configuration
 

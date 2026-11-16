@@ -28,8 +28,15 @@ logger = logging.getLogger(__name__)
 APP_DIR = Path(__file__).resolve().parent
 PAGE_SIZE = 12
 MINIMUM_BOOKING_DATE = date(2026, 1, 1)
-EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 PROPERTY_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+DISPOSABLE_EMAIL_DOMAINS = frozenset(
+    {"10minutemail.com", "mailinator.com", "tempmail.com"}
+)
+EMAIL_PATTERN = re.compile(
+    r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@"
+    r"(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+"
+    r"[A-Za-z]{2,63}$"
+)
 
 
 class FormValidationError(ValueError):
@@ -111,6 +118,10 @@ def create_app(settings: Settings | None = None) -> Flask:
         sort = request.args.get("sort", "newest").strip()
         if sort not in LISTING_SORTS:
             abort(422, description="Choose a valid sorting option.")
+        refresh_value = request.args.get("refresh", "")
+        if refresh_value and refresh_value != "1":
+            abort(422, description="Refresh must be set to 1.")
+        force_refresh = refresh_value == "1"
         property_type = request.args.get("property_type", "").strip() or None
         furnishing_status = request.args.get("furnishing_status", "").strip() or None
         if property_type and len(property_type) > 80:
@@ -133,8 +144,10 @@ def create_app(settings: Settings | None = None) -> Flask:
         furnishings: list[str] = []
         try:
             repository = _repository()
-            types = repository.fetch_property_types()
-            furnishings = repository.fetch_furnishing_statuses()
+            types = repository.fetch_property_types(force_refresh=force_refresh)
+            furnishings = repository.fetch_furnishing_statuses(
+                force_refresh=force_refresh
+            )
             if property_type and property_type not in types:
                 abort(422, description="Choose a property type from the available options.")
             if furnishing_status and furnishing_status not in furnishings:
@@ -144,6 +157,7 @@ def create_app(settings: Settings | None = None) -> Flask:
                 page_size=PAGE_SIZE,
                 search=search,
                 sort=sort,
+                force_refresh=force_refresh,
                 property_type=property_type,
                 furnishing_status=furnishing_status,
                 minimum_rent=minimum_rent,
@@ -155,6 +169,10 @@ def create_app(settings: Settings | None = None) -> Flask:
             logger.warning("Could not load property listings: %s", error)
 
         args = request.args.to_dict()
+        args.pop("refresh", None)
+        refresh_args = args.copy()
+        refresh_args["refresh"] = 1
+        refresh_url = url_for("properties", **refresh_args)
         previous_url = None
         next_url = None
         if page > 1:
@@ -163,6 +181,33 @@ def create_app(settings: Settings | None = None) -> Flask:
         if listing and listing.has_next_page:
             args["page"] = page + 1
             next_url = url_for("properties", **args)
+        first_result = (page - 1) * PAGE_SIZE + 1 if listing and listing.properties else 0
+        last_result = (
+            (page - 1) * PAGE_SIZE + len(listing.properties)
+            if listing and listing.properties
+            else 0
+        )
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            if listing is None:
+                return (
+                    listing_error or "Listings are temporarily unavailable.",
+                    503,
+                    {"Content-Type": "text/plain; charset=utf-8"},
+                )
+            headers = {
+                "X-Last-Result": str(last_result),
+                "X-Has-Next": str(bool(next_url)).lower(),
+            }
+            if next_url:
+                headers["X-Next-Page"] = next_url
+            return (
+                render_template(
+                    "_property_cards.html",
+                    properties=listing.properties,
+                ),
+                200,
+                headers,
+            )
         return render_template(
             "properties.html",
             listing=listing,
@@ -170,6 +215,8 @@ def create_app(settings: Settings | None = None) -> Flask:
             types=types,
             furnishings=furnishings,
             page=page,
+            first_result=first_result,
+            last_result=last_result,
             search=search,
             sort=sort,
             property_type=property_type or "",
@@ -179,6 +226,7 @@ def create_app(settings: Settings | None = None) -> Flask:
             bedrooms=bedrooms,
             previous_url=previous_url,
             next_url=next_url,
+            refresh_url=refresh_url,
         )
 
     @app.get("/property/<property_id>")
@@ -516,19 +564,38 @@ def _valid_csrf(submitted: Any) -> bool:
 
 
 def _validate_person(values: dict[str, str]) -> tuple[str, str, str]:
-    name = values.get("name", values.get("applicant_name", "")).strip()
-    email = values.get("email", "").strip()
-    phone = values.get("phone", "").strip()
-    if len(name) < 2 or len(name) > 200 or re.search(r"\d", name):
-        raise FormValidationError(
-            "Enter a name between 2 and 200 characters without numbers."
+    name = _normalize_whitespace(values.get("name", values.get("applicant_name", ""))).upper()
+    email = values.get("email", "").strip().lower()
+    phone = _normalize_phone(values.get("phone", ""))
+    if (
+        not 2 <= len(name) <= 100
+        or not any(character.isalpha() for character in name)
+        or any(
+            not (character.isalpha() or character in " .'-")
+            for character in name
         )
-    if len(email) > 320 or not EMAIL_PATTERN.fullmatch(email):
+        or _is_repeated_character(name)
+    ):
+        raise FormValidationError(
+            "Enter a name between 2 and 100 characters using letters, spaces, "
+            "hyphens, periods, or apostrophes."
+        )
+    email_parts = email.split("@")
+    if (
+        len(email) > 320
+        or len(email_parts) != 2
+        or len(email_parts[0]) > 64
+        or len(email_parts[1]) > 253
+        or not EMAIL_PATTERN.fullmatch(email)
+        or email_parts[0].startswith(".")
+        or email_parts[0].endswith(".")
+        or ".." in email_parts[0]
+        or any(
+            email_parts[1] == domain or email_parts[1].endswith(f".{domain}")
+            for domain in DISPOSABLE_EMAIL_DOMAINS
+        )
+    ):
         raise FormValidationError("Enter a valid email address.")
-    if not re.fullmatch(r"09\d{9}", phone):
-        raise FormValidationError(
-            "Enter an 11-digit Philippine phone number starting with 09."
-        )
     if values.get("consent") != "yes":
         raise FormValidationError(
             "Please confirm consent to process your contact details."
@@ -540,28 +607,40 @@ def _validate_person(values: dict[str, str]) -> tuple[str, str, str]:
 
 def _validate_contact(values: dict[str, str]) -> tuple[str, str, str, str]:
     name, email, phone = _validate_person(values)
-    message = values.get("message", "").strip()
+    message = _normalize_whitespace(values.get("message", ""))
     if len(message) < 10 or len(message) > 2000:
         raise FormValidationError(
             "Inquiry details must be between 10 and 2000 characters."
         )
+    if _is_repeated_character(message):
+        raise FormValidationError("Please enter meaningful inquiry details.")
     return name, email, phone, message
 
 
 def _validate_application(
     values: dict[str, str],
 ) -> tuple[float, str, str, int, int, str]:
+    income_value = values.get("monthly_income", "").strip()
+    if not re.fullmatch(
+        r"(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,2})?",
+        income_value,
+    ):
+        raise FormValidationError(
+            "Enter a valid monthly income with no more than two decimal places."
+        )
     try:
-        income = float(values.get("monthly_income", "").replace(",", ""))
+        income = float(income_value.replace(",", ""))
     except ValueError as error:
         raise FormValidationError("Enter a valid monthly income.") from error
     if not math.isfinite(income) or not 0 < income <= 1_000_000_000:
         raise FormValidationError(
             "Monthly income must be greater than ₱0 and at most ₱1,000,000,000."
         )
-    occupation = values.get("occupation", "").strip()
+    occupation = _normalize_whitespace(values.get("occupation", "")).upper()
     if not 2 <= len(occupation) <= 150:
         raise FormValidationError("Occupation must be between 2 and 150 characters.")
+    if _is_repeated_character(occupation):
+        raise FormValidationError("Enter a valid occupation or industry.")
     move_in = values.get("target_move_in_date", "").strip()
     move_in_date = _parse_form_date(move_in, "Choose a valid move-in date.")
     if move_in_date < max(date.today(), MINIMUM_BOOKING_DATE):
@@ -574,9 +653,11 @@ def _validate_application(
     occupants = _bounded_integer(
         values.get("occupants"), 1, 50, "Number of occupants"
     )
-    notes = values.get("notes", "").strip()
+    notes = _normalize_whitespace(values.get("notes", ""))
     if len(notes) > 2000:
         raise FormValidationError("Additional notes must be 2000 characters or fewer.")
+    if _is_repeated_character(notes):
+        raise FormValidationError("Please enter meaningful additional notes.")
     return income, occupation, move_in, lease_months, occupants, notes
 
 
@@ -602,10 +683,51 @@ def _validate_viewing(values: dict[str, str]) -> tuple[str, str, int, str]:
     lease_months = _bounded_integer(
         values.get("lease_months"), 1, 120, "Lease duration"
     )
-    message = values.get("message", "").strip()
+    message = _normalize_whitespace(values.get("message", ""))
     if len(message) > 2000:
         raise FormValidationError("Message must be 2000 characters or fewer.")
+    if _is_repeated_character(message):
+        raise FormValidationError("Please enter a meaningful message.")
     return viewing_date, time_slot, lease_months, message
+
+
+def _normalize_whitespace(value: str) -> str:
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _is_repeated_character(value: str) -> bool:
+    characters = "".join(value.split()).casefold()
+    return len(characters) >= 3 and len(set(characters)) == 1
+
+
+def _normalize_phone(value: str) -> str:
+    number = value.strip()
+    if not re.fullmatch(r"[+0-9()\s-]+", number):
+        raise FormValidationError(
+            "Enter a Philippine mobile number starting with 09 or +639."
+        )
+    compact = re.sub(r"[\s()-]", "", number)
+    if re.fullmatch(r"09\d{9}", compact):
+        normalized = compact
+    elif re.fullmatch(r"\+639\d{9}", compact):
+        normalized = f"0{compact[3:]}"
+    else:
+        raise FormValidationError(
+            "Enter 11 digits starting with 09 or +639 followed by 9 digits."
+        )
+
+    subscriber = normalized[2:]
+    ascending = all(
+        (int(subscriber[index]) + 1) % 10 == int(subscriber[index + 1])
+        for index in range(len(subscriber) - 1)
+    )
+    descending = all(
+        (int(subscriber[index]) - 1) % 10 == int(subscriber[index + 1])
+        for index in range(len(subscriber) - 1)
+    )
+    if len(set(subscriber)) == 1 or ascending or descending:
+        raise FormValidationError("Enter a valid Philippine mobile number.")
+    return normalized
 
 
 def _parse_form_date(value: str, message: str) -> date:
@@ -635,6 +757,14 @@ def _query_number(name: str) -> float | None:
     value = request.args.get(name, "").strip()
     if not value:
         return None
+    if not re.fullmatch(r"\d+(?:\.\d{1,2})?", value):
+        abort(
+            422,
+            description=(
+                f"{name.replace('_', ' ').capitalize()} must be a non-negative "
+                "amount with at most two decimal places."
+            ),
+        )
     try:
         number = float(value)
     except ValueError:

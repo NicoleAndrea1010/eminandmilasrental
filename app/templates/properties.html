@@ -1,21 +1,24 @@
 {% extends "base.html" %}
-{% block title %}Available Homes | Emin & Mila's Rentals{% endblock %}
+{% block title %}Properties | Emin & Mila's Rentals{% endblock %}
 {% block content %}
 {% from "_icons.html" import icon %}
 <section class="page-hero">
   <div class="wrap" data-reveal>
-    <span class="eyebrow">FIND YOUR NEXT HOME</span>
+    <span class="eyebrow">LAGUNA RENTAL COLLECTION</span>
     <h1>Find a home that fits your day-to-day.</h1>
-    <p>Browse available homes with clear monthly rent, useful details, and filters to narrow your search.</p>
+    <p>Explore thoughtfully presented homes, compare details, and narrow your search to what matters most.</p>
   </div>
 </section>
 <section class="section wrap listings-layout">
   <aside class="filter-panel" data-reveal>
-    <h2>{{ icon('search', 20) }} Find a home</h2>
+    <div class="filter-heading">
+      <div><span class="eyebrow">YOUR SEARCH</span><h2>{{ icon('search', 20) }} Refine properties</h2></div>
+      <a class="reset-link" href="/properties">{{ icon('close', 14) }} Clear all</a>
+    </div>
     <form action="/properties" method="get" class="filter-form">
-      <label>Search housing
+      <label>Search properties
         <span class="search-field">{{ icon('search', 17) }}<input type="search" name="search" value="{{ search }}" maxlength="120" placeholder="Name, location, or unit" autocomplete="off" aria-describedby="search-help"></span>
-        <span class="field-hint" id="search-help">Search by home name, area, or unit number.</span>
+        <span class="field-hint" id="search-help">Search by property name, area, or unit number.</span>
       </label>
       <label>Property type
         <select name="property_type">
@@ -52,8 +55,10 @@
           <input type="number" name="maximum_rent" min="0" max="1000000000" step="0.01" value="{{ maximum_rent }}" placeholder="₱" aria-label="Maximum monthly rent">
         </label>
       </div>
-      <button class="button button-full" type="submit">{{ icon('search', 16) }} Apply filters</button>
-      <a class="reset-link" href="/properties">{{ icon('close', 14) }} Reset filters</a>
+      <div class="filter-actions">
+        <button class="button button-full" type="submit">{{ icon('search', 16) }} Apply filters</button>
+        <a class="reset-link" href="{{ refresh_url }}">{{ icon('sparkle', 14) }} Refresh results</a>
+      </div>
     </form>
   </aside>
   <div class="listing-results">
@@ -62,26 +67,25 @@
     {% elif listing and listing.properties %}
       <div class="results-heading">
         <div><span class="eyebrow">OUR LISTINGS</span><h2>Homes to explore</h2></div>
-        <span>Page {{ page }}</span>
+        <span class="results-count" data-results-count data-first-result="{{ first_result }}" data-last-result="{{ last_result }}">Showing {{ first_result }}–{{ last_result }} properties{% if listing.has_next_page %} · more available{% endif %}</span>
       </div>
-      <div class="property-grid">
-        {% for property in listing.properties %}
-          {% with card_index=loop.index0 %}{% include "_property_card.html" %}{% endwith %}
-        {% endfor %}
+      <div class="property-grid" data-property-grid>
+        {% with properties=listing.properties %}{% include "_property_cards.html" %}{% endwith %}
       </div>
-      {% if previous_url or next_url %}
-      <nav class="pagination" aria-label="Listing pages">
-        {% if previous_url %}<a class="button button-quiet" href="{{ previous_url }}">{{ icon('arrow-left', 16) }} Previous</a>{% else %}<span></span>{% endif %}
-        <span>Page {{ page }}</span>
-        {% if next_url %}<a class="button button-quiet" href="{{ next_url }}">Next {{ icon('arrow-right', 16) }}</a>{% endif %}
+      <nav class="pagination" aria-label="More properties" data-listing-pagination>
+        <span class="listing-scroll-hint">{% if next_url %}Scroll to discover more homes{% else %}You’re all caught up{% endif %}</span>
+        {% if next_url %}
+          <a class="button button-quiet" href="{{ next_url }}" data-listing-next>{{ icon('arrow-right', 16) }} Load more homes</a>
+        {% endif %}
+        <span class="visually-hidden" data-listing-status role="status" aria-live="polite"></span>
       </nav>
-      {% endif %}
     {% elif listing %}
       <div class="empty-state">
         <span class="empty-icon">{{ icon('search', 25) }}</span>
-        <h2>{% if search or property_type or furnishing_status or bedrooms or minimum_rent or maximum_rent %}No housing matches these search and filter options.{% else %}No available properties are listed right now.{% endif %}</h2>
+        <h2>{% if search or property_type or furnishing_status or bedrooms or minimum_rent or maximum_rent %}No properties match these search and filter options.{% else %}No available properties are listed right now.{% endif %}</h2>
         <p>Try adjusting your filters or check back later.</p>
         <a class="button button-quiet" href="/properties">Clear search and filters</a>
+        {% if previous_url %}<a class="text-link empty-previous" href="{{ previous_url }}">{{ icon('arrow-left', 15) }} Previous page</a>{% endif %}
       </div>
     {% else %}
       <div class="empty-state"><h2>Listings are temporarily unavailable.</h2><p>Please try again shortly.</p></div>

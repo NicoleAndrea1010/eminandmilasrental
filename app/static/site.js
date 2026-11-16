@@ -58,6 +58,30 @@ const getFieldError = (field) => {
   return "Please check this field.";
 };
 
+document.querySelectorAll("[data-normalize-uppercase]").forEach((field) => {
+  field.addEventListener("blur", () => {
+    field.value = field.value.replace(/\s+/g, " ").trim().toUpperCase();
+  });
+});
+
+document.querySelectorAll("[data-normalize-email]").forEach((field) => {
+  field.addEventListener("blur", () => {
+    field.value = field.value.trim().toLowerCase();
+  });
+});
+
+document.querySelectorAll("[data-normalize-phone]").forEach((field) => {
+  field.addEventListener("blur", () => {
+    field.value = field.value.trim().replace(/[\s()-]/g, "");
+  });
+});
+
+document.querySelectorAll("[data-normalize-whitespace]").forEach((field) => {
+  field.addEventListener("blur", () => {
+    field.value = field.value.replace(/\s+/g, " ").trim();
+  });
+});
+
 document.querySelectorAll("form").forEach((form, formIndex) => {
   const fields = form.querySelectorAll(
     'input:not([type="hidden"]):not([type="submit"]):not([type="button"]), select, textarea'
@@ -117,9 +141,10 @@ const canAnimateReveals = "IntersectionObserver" in window
   && revealItems.length
   && !document.hidden
   && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let revealObserver = null;
 if (canAnimateReveals) {
   document.documentElement.classList.add("has-motion");
-  const revealObserver = new IntersectionObserver((entries, observer) => {
+  revealObserver = new IntersectionObserver((entries, observer) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
         entry.target.classList.add("is-visible");
@@ -130,6 +155,109 @@ if (canAnimateReveals) {
   revealItems.forEach((item) => revealObserver.observe(item));
 } else {
   revealItems.forEach((item) => item.classList.add("is-visible"));
+}
+
+const revealAppendedItems = (items) => {
+  items.forEach((item) => {
+    if (revealObserver) revealObserver.observe(item);
+    else item.classList.add("is-visible");
+  });
+};
+
+const listingGrid = document.querySelector("[data-property-grid]");
+const listingPagination = document.querySelector("[data-listing-pagination]");
+const listingNextLink = listingPagination?.querySelector("[data-listing-next]");
+const listingStatus = listingPagination?.querySelector("[data-listing-status]");
+const resultsCount = document.querySelector("[data-results-count]");
+
+if (listingGrid && listingPagination && listingNextLink && listingStatus && resultsCount) {
+  let loadingMore = false;
+  let pauseAutoLoad = false;
+  const firstResult = Number(resultsCount.dataset.firstResult);
+  const listingScrollHint = listingPagination.querySelector(".listing-scroll-hint");
+
+  const loadMoreListings = async () => {
+    if (loadingMore) return;
+    const requestUrl = new URL(listingNextLink.href, window.location.href);
+    if (requestUrl.origin !== window.location.origin || requestUrl.pathname !== window.location.pathname) {
+      listingStatus.textContent = "More homes could not be loaded. Please try again.";
+      pauseAutoLoad = true;
+      return;
+    }
+
+    loadingMore = true;
+    listingNextLink.setAttribute("aria-disabled", "true");
+    listingStatus.textContent = "Loading more homes.";
+
+    try {
+      const response = await fetch(requestUrl, {
+        credentials: "same-origin",
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      if (!response.ok) throw new Error(`Request failed with status ${response.status}.`);
+
+      const lastResult = Number(response.headers.get("X-Last-Result"));
+      const hasNextPage = response.headers.get("X-Has-Next") === "true";
+      const nextPath = response.headers.get("X-Next-Page");
+      let nextUrl = null;
+      if (hasNextPage) {
+        if (!nextPath) throw new Error("The next page link is missing.");
+        nextUrl = new URL(nextPath, window.location.href);
+        if (nextUrl.origin !== window.location.origin || nextUrl.pathname !== window.location.pathname) {
+          throw new Error("The next page link is invalid.");
+        }
+      }
+      if (!Number.isSafeInteger(lastResult) || lastResult < firstResult) {
+        throw new Error("The listing count is invalid.");
+      }
+
+      const template = document.createElement("template");
+      template.innerHTML = await response.text();
+      const newCards = Array.from(template.content.querySelectorAll(".property-card"));
+      if (!newCards.length) throw new Error("No property cards were returned.");
+
+      listingGrid.append(...newCards);
+      resultsCount.dataset.lastResult = String(lastResult);
+      resultsCount.textContent = `Showing ${firstResult}–${lastResult} properties${hasNextPage ? " · more available" : ""}`;
+      if (listingScrollHint) {
+        listingScrollHint.textContent = hasNextPage ? "Scroll to discover more homes" : "You’re all caught up";
+      }
+      revealAppendedItems(newCards);
+
+      if (hasNextPage && nextUrl) {
+        listingNextLink.href = nextUrl.href;
+        listingStatus.textContent = `Loaded ${newCards.length} more homes.`;
+      } else {
+        listingNextLink.remove();
+        listingStatus.textContent = "All available homes have been loaded.";
+      }
+      pauseAutoLoad = false;
+    } catch (error) {
+      console.error("Could not load additional property listings.", error);
+      listingStatus.textContent = "More homes could not be loaded. Select Load more homes to try again.";
+      pauseAutoLoad = true;
+    } finally {
+      loadingMore = false;
+      if (listingNextLink.isConnected) listingNextLink.removeAttribute("aria-disabled");
+      checkForMoreListings();
+    }
+  };
+
+  const checkForMoreListings = () => {
+    if (pauseAutoLoad || loadingMore || !listingNextLink.isConnected) return;
+    if (listingNextLink.getBoundingClientRect().top <= window.innerHeight + 600) {
+      loadMoreListings();
+    }
+  };
+
+  listingNextLink.addEventListener("click", (event) => {
+    event.preventDefault();
+    pauseAutoLoad = false;
+    loadMoreListings();
+  });
+  window.addEventListener("scroll", checkForMoreListings, { passive: true });
+  window.addEventListener("resize", checkForMoreListings);
+  checkForMoreListings();
 }
 
 const slideImage = document.querySelector("[data-slide-image]");

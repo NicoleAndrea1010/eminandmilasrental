@@ -78,13 +78,13 @@
     {% if active_modal == 'viewing' and form_error %}<div class="notice notice-error" role="alert">{{ form_error }}</div>{% endif %}
     <div class="form-grid">
       <label class="field-wide">Full name *
-        <input name="name" required minlength="2" maxlength="200" pattern="[^0-9]+" title="Use a name without numbers." value="{{ form_values.get('name', '') }}" autocomplete="name">
+        <input name="name" required minlength="2" maxlength="100" data-normalize-uppercase value="{{ form_values.get('name', '') }}" autocomplete="name">
       </label>
       <label>Email address *
-        <input name="email" type="email" required maxlength="320" value="{{ form_values.get('email', '') }}" autocomplete="email">
+        <input name="email" type="email" required maxlength="320" data-normalize-email value="{{ form_values.get('email', '') }}" autocomplete="email">
       </label>
       <label>Phone number *
-        <input name="phone" type="tel" required pattern="09[0-9]{9}" minlength="11" maxlength="11" title="Enter 11 digits starting with 09." placeholder="09171234567" value="{{ form_values.get('phone', '') }}" autocomplete="tel">
+        <input name="phone" type="tel" required maxlength="20" data-normalize-phone inputmode="tel" title="Use 09XXXXXXXXX or +639XXXXXXXXX." placeholder="09171234567 or +639171234567" value="{{ form_values.get('phone', '') }}" autocomplete="tel">
       </label>
       <label>Preferred date *
         <input name="viewing_date" type="date" min="{{ default_viewing }}" required value="{{ form_values.get('viewing_date', default_viewing) }}">
@@ -96,7 +96,7 @@
         <input name="lease_months" type="number" min="1" max="120" step="1" required value="{{ form_values.get('lease_months', '12') }}">
       </label>
       <label class="field-wide">Message (optional)
-        <textarea name="message" maxlength="2000" rows="3">{{ form_values.get('message', '') }}</textarea>
+        <textarea name="message" maxlength="2000" rows="3" data-normalize-whitespace>{{ form_values.get('message', '') }}</textarea>
       </label>
     </div>
     <label class="consent"><input type="checkbox" name="consent" value="yes" required {% if form_values.get('consent') == 'yes' %}checked{% endif %}> I consent to share these contact details for rental inquiry purposes.</label>
@@ -118,19 +118,19 @@
     {% if active_modal == 'application' and form_error %}<div class="notice notice-error" role="alert">{{ form_error }}</div>{% endif %}
     <div class="form-grid">
       <label class="field-wide">Full name *
-        <input name="applicant_name" required minlength="2" maxlength="200" pattern="[^0-9]+" title="Use a name without numbers." value="{{ form_values.get('applicant_name', '') }}" autocomplete="name">
+        <input name="applicant_name" required minlength="2" maxlength="100" data-normalize-uppercase value="{{ form_values.get('applicant_name', '') }}" autocomplete="name">
       </label>
       <label>Email address *
-        <input name="email" type="email" required maxlength="320" value="{{ form_values.get('email', '') }}" autocomplete="email">
+        <input name="email" type="email" required maxlength="320" data-normalize-email value="{{ form_values.get('email', '') }}" autocomplete="email">
       </label>
       <label>Phone number *
-        <input name="phone" type="tel" required pattern="09[0-9]{9}" minlength="11" maxlength="11" title="Enter 11 digits starting with 09." placeholder="09171234567" value="{{ form_values.get('phone', '') }}" autocomplete="tel">
+        <input name="phone" type="tel" required maxlength="20" data-normalize-phone inputmode="tel" title="Use 09XXXXXXXXX or +639XXXXXXXXX." placeholder="09171234567 or +639171234567" value="{{ form_values.get('phone', '') }}" autocomplete="tel">
       </label>
       <label>Monthly income (₱) *
         <input name="monthly_income" type="number" min="0.01" max="1000000000" step="0.01" required value="{{ form_values.get('monthly_income', '') }}">
       </label>
       <label>Occupation / industry *
-        <input name="occupation" required minlength="2" maxlength="150" value="{{ form_values.get('occupation', '') }}">
+        <input name="occupation" required minlength="2" maxlength="150" data-normalize-uppercase value="{{ form_values.get('occupation', '') }}">
       </label>
       <label>Target move-in date *
         <input name="target_move_in_date" type="date" min="{{ minimum_move_in }}" required value="{{ form_values.get('target_move_in_date', default_move_in) }}">
@@ -142,7 +142,7 @@
         <input name="occupants" type="number" min="1" max="50" step="1" required value="{{ form_values.get('occupants', '1') }}">
       </label>
       <label class="field-wide">Additional notes (optional)
-        <textarea name="notes" maxlength="2000" rows="3">{{ form_values.get('notes', '') }}</textarea>
+        <textarea name="notes" maxlength="2000" rows="3" data-normalize-whitespace>{{ form_values.get('notes', '') }}</textarea>
       </label>
     </div>
     <label class="consent"><input type="checkbox" name="consent" value="yes" required {% if form_values.get('consent') == 'yes' %}checked{% endif %}> I confirm that the information provided is accurate and consent to processing my rental application.</label>

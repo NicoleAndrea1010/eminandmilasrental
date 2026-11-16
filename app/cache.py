@@ -13,14 +13,21 @@ class TTLCache:
         self._entries: dict[str, tuple[float, object]] = {}
         self._lock = threading.Lock()
 
-    def get_or_load(self, key: str, loader: Callable[[], T]) -> T:
+    def get_or_load(
+        self,
+        key: str,
+        loader: Callable[[], T],
+        *,
+        force_refresh: bool = False,
+    ) -> T:
         if self._ttl_seconds == 0:
             return loader()
         now = time.monotonic()
-        with self._lock:
-            entry = self._entries.get(key)
-            if entry is not None and entry[0] > now:
-                return cast(T, entry[1])
+        if not force_refresh:
+            with self._lock:
+                entry = self._entries.get(key)
+                if entry is not None and entry[0] > now:
+                    return cast(T, entry[1])
 
         value = loader()
         with self._lock:

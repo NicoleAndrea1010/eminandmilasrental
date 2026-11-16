@@ -59,6 +59,7 @@ class SupabasePropertyRepository:
         page_size: int = 12,
         search: str = "",
         sort: str = "newest",
+        force_refresh: bool = False,
         property_type: str | None = None,
         furnishing_status: str | None = None,
         minimum_rent: float | None = None,
@@ -89,6 +90,7 @@ class SupabasePropertyRepository:
                 maximum_rent=maximum_rent,
                 bedrooms=bedrooms,
             ),
+            force_refresh=force_refresh,
         )
 
     def _fetch_available_units(
@@ -154,13 +156,21 @@ class SupabasePropertyRepository:
             has_next_page=len(rows) > page_size,
         )
 
-    def fetch_property_types(self) -> list[str]:
-        return self._fetch_distinct_listing_values("property_type")
+    def fetch_property_types(self, *, force_refresh: bool = False) -> list[str]:
+        return self._fetch_distinct_listing_values(
+            "property_type", force_refresh=force_refresh
+        )
 
-    def fetch_furnishing_statuses(self) -> list[str]:
-        return self._fetch_distinct_listing_values("furnishing_status")
+    def fetch_furnishing_statuses(
+        self, *, force_refresh: bool = False
+    ) -> list[str]:
+        return self._fetch_distinct_listing_values(
+            "furnishing_status", force_refresh=force_refresh
+        )
 
-    def _fetch_distinct_listing_values(self, column: str) -> list[str]:
+    def _fetch_distinct_listing_values(
+        self, column: str, *, force_refresh: bool = False
+    ) -> list[str]:
         return self._cache.get_or_load(
             f"listing-values:{column}",
             lambda: sorted(
@@ -175,6 +185,7 @@ class SupabasePropertyRepository:
                     and value.strip()
                 }
             ),
+            force_refresh=force_refresh,
         )
 
     def fetch_property(self, property_id: str) -> Property | None:
