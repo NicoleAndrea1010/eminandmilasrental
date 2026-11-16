@@ -37,15 +37,15 @@ site:
 Open <http://127.0.0.1:8000>. Listings are empty until local property data is
 added. The `LOCAL_DATABASE_PATH` setting can point to another SQLite file.
 
-For a production WSGI server, install the same requirements and run
-`waitress-serve --call app.main:create_app` with `APP_ENV=production`,
-`SESSION_SECRET`, `SUPABASE_URL`, and `SUPABASE_PUBLISHABLE_KEY` configured in
-the hosting provider's environment settings. Do not upload `.env`; it is for
-local development and is excluded from Git. Production startup rejects missing
-API settings, non-HTTPS Supabase URLs, and known service-role keys. Use the
-provider's assigned port/bind configuration if it differs from Waitress's
-default. The production session secret must be a persistent, random value at
-least 32 characters long.
+For Render, set the Build Command to `pip install -r requirements.txt` and the
+Start Command to
+`waitress-serve --listen=0.0.0.0:$PORT --call app.main:create_app`. Set
+`APP_ENV=production`, `SESSION_SECRET`, `SUPABASE_URL`, and
+`SUPABASE_PUBLISHABLE_KEY` in the Render environment settings. Do not upload
+`.env`; it is for local development and is excluded from Git. Production
+startup rejects missing API settings, non-HTTPS Supabase URLs, and known
+service-role keys. The production session secret must be persistent, random,
+and at least 32 characters long.
 
 ## Supabase setup
 
@@ -69,8 +69,9 @@ The configured project returned PostgREST `42501` for anonymous reads from
 table is approved for public display and that its public-read RLS policy is
 present. Apply
 `supabase/migrations/20261112211500_grant_anon_public_listings_read.sql` in
-the Supabase SQL Editor to grant `anon` SELECT on this table only. The
-migration does not change RLS or grant access to `public.units`; the website
+the Supabase SQL Editor to grant `anon` SELECT on this listing object only.
+The migration does not change RLS or grant access to `public.units`; RLS
+policies still determine which rows the anonymous role can read. The website
 does not use a service-role key.
 
 The forms validate contact details, require consent and a confirmation step,
