@@ -90,8 +90,14 @@ Philippine mobile numbers in `09...` or `+639...` format and store them as
 `09...`. Email domains are not restricted; malformed addresses and the common
 disposable domains `mailinator.com`, `tempmail.com`, and `10minutemail.com`
 (including subdomains) are rejected. Application income accepts at most two
-decimal places; booking dates must be in the future. The site has no passwords,
-age fields, or file uploads.
+decimal places; booking dates must be in the future. Rental applications
+require an 18+ confirmation, but the site does not request or store a date of
+birth. The site has no passwords or file uploads.
+
+The website's Terms and Conditions and Privacy Notice are available at
+`/terms` and `/privacy`. Inquiry records have no fixed automatic deletion
+schedule; review and remove them when they are no longer needed, subject to
+active rental matters and legal recordkeeping requirements.
 
 ## Configuration
 
@@ -111,9 +117,6 @@ Use a persistent random `SESSION_SECRET` of at least 32 characters and HTTPS
 in production. When hosted
 behind a reverse proxy, configure its trusted client-IP handling carefully;
 the application does not trust arbitrary forwarded client-IP headers.
-
-The Terms and Conditions page currently contains draft wording. Have it
-reviewed and approved before deployment; the forms require users to accept it.
 
 ## Tests
 

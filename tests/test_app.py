@@ -584,18 +584,29 @@ def test_property_detail_shows_application_and_viewing_forms() -> None:
     assert response.status_code == 200
     assert "Schedule a viewing" in response.text
     assert "Apply for this home" in response.text
+    assert "at least 18 years old" in response.text
     assert f'min="{max(date.today(), date(2026, 1, 1)).isoformat()}"' in response.text
     assert f'min="{max(date.today() + timedelta(days=1), date(2026, 1, 1)).isoformat()}"' in response.text
 
 
-def test_terms_page_is_linked_and_marked_as_a_draft() -> None:
+def test_terms_and_privacy_pages_are_linked_and_informative() -> None:
     client, _ = build_client()
 
-    page = client.get("/terms")
+    terms_page = client.get("/terms")
+    privacy_page = client.get("/privacy")
 
-    assert page.status_code == 200
-    assert "Draft for review" in page.text
+    assert terms_page.status_code == 200
+    assert "Cernan Anthony L. Manalo" in terms_page.text
+    assert "Draft" not in terms_page.text
+    assert "at least 18 years old" in terms_page.text
+    assert "does not accept rent" in terms_page.text
+    assert privacy_page.status_code == 200
+    assert "monthly income" in privacy_page.text
+    assert "do not currently use a fixed automatic deletion schedule" in (
+        privacy_page.text
+    )
     assert 'href="/terms"' in client.get("/").text
+    assert 'href="/privacy"' in client.get("/").text
 
 
 def test_contact_form_writes_to_repository_after_consent() -> None:
@@ -724,6 +735,7 @@ def test_application_and_viewing_forms_submit_existing_inquiry_payloads() -> Non
             "phone": "09171234567",
             "consent": "yes",
             "terms": "yes",
+            "adult_confirmation": "yes",
             "monthly_income": "50000",
             "occupation": "Designer",
             "target_move_in_date": (date.today() + timedelta(days=14)).isoformat(),
@@ -753,6 +765,7 @@ def test_application_and_viewing_forms_submit_existing_inquiry_payloads() -> Non
     assert len(repository.saved) == 2
     assert repository.saved[0]["extra_data"]["applicant_name"] == "ALEX EXAMPLE"
     assert repository.saved[0]["extra_data"]["occupation"] == "DESIGNER"
+    assert "adult_confirmation" not in repository.saved[0]["extra_data"]
     assert repository.saved[1]["extra_data"]["time_slot"] == "10:00 AM - 11:00 AM"
 
 
@@ -1038,6 +1051,7 @@ def test_contact_rejects_dummy_or_invalid_philippine_mobile_numbers(phone: str) 
 
 def test_application_validation_covers_each_field() -> None:
     valid = {
+        "adult_confirmation": "yes",
         "monthly_income": "50000",
         "occupation": "Designer",
         "target_move_in_date": (date.today() + timedelta(days=14)).isoformat(),
@@ -1046,6 +1060,7 @@ def test_application_validation_covers_each_field() -> None:
         "notes": "",
     }
     invalid_values = [
+        ("adult_confirmation", "no"),
         ("monthly_income", "NaN"),
         ("monthly_income", "0"),
         ("monthly_income", "50000.999"),

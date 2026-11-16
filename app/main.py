@@ -256,6 +256,10 @@ def create_app(settings: Settings | None = None) -> Flask:
     def terms():
         return render_template("terms.html")
 
+    @app.get("/privacy")
+    def privacy():
+        return render_template("privacy.html")
+
     @app.get("/contact")
     def contact():
         unit_id = request.args.get("unit_id", "").strip()
@@ -620,6 +624,10 @@ def _validate_contact(values: dict[str, str]) -> tuple[str, str, str, str]:
 def _validate_application(
     values: dict[str, str],
 ) -> tuple[float, str, str, int, int, str]:
+    if values.get("adult_confirmation") != "yes":
+        raise FormValidationError(
+            "Rental applications may only be submitted by people aged 18 or older."
+        )
     income_value = values.get("monthly_income", "").strip()
     if not re.fullmatch(
         r"(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,2})?",

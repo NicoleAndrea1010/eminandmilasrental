@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Privacy Notice | Emin & Mila's Rentals{% endblock %}
+{% block content %}
+<section class="section wrap terms-page">
+  <span class="eyebrow">YOUR INFORMATION</span>
+  <h1>Privacy Notice</h1>
+  <p class="terms-updated">Effective November 17, 2026</p>
+  <p>This notice explains how Cernan Anthony L. Manalo, operating the Emin &amp; Mila's Rentals website as landlord for rental homes in Laguna, Philippines, handles personal information submitted through this website.</p>
+
+  <section class="terms-section">
+    <h2>Information we collect</h2>
+    <p>Depending on the request, we collect your name, email address, Philippine mobile number, inquiry or message, selected property, requested viewing date and time, intended move-in date, intended lease length, number of occupants, occupation, monthly income, and optional notes. To submit a rental application, you must confirm that you are at least 18. The site uses this confirmation to check eligibility and does not include it in the saved inquiry record. We do not request or store a date of birth. We do not accept payments or collect payment-card details through this website.</p>
+  </section>
+  <section class="terms-section">
+    <h2>Why we use it</h2>
+    <p>We use the information to respond to questions, discuss rental applications, arrange and confirm viewings, contact you about the property you selected, protect the website and forms from misuse, and meet legal obligations. We do not use inquiry details for unrelated marketing.</p>
+  </section>
+  <section class="terms-section">
+    <h2>Where it is stored and who processes it</h2>
+    <p>Submitted inquiries are stored in the website's configured database: Supabase in production or a local SQLite database during local development. Render hosts the production website. These infrastructure and network providers and their service providers may process information to provide hosting, database, security, and network services. Information may be processed in the regions used by those services. We do not sell your personal information.</p>
+    <p>To protect the website and limit repeated submissions, the server processes your IP address in memory for rate limiting. The limiter is temporary and resets when the application restarts. Some listing images may be served by their image host; your browser may connect directly to that host and disclose technical connection information such as your IP address.</p>
+  </section>
+  <section class="terms-section">
+    <h2>How long we keep it</h2>
+    <p>We do not currently use a fixed automatic deletion schedule. We keep information only as long as reasonably needed to respond to and manage the inquiry, evaluate or administer a rental, maintain necessary tenancy records, resolve disputes, or meet legal obligations. We review information and delete or securely dispose of it when it is no longer needed, subject to those obligations.</p>
+  </section>
+  <section class="terms-section">
+    <h2>Cookies and security</h2>
+    <p>The website uses a necessary session cookie to support form security and cross-site request forgery protection. It does not use this cookie for advertising. We use reasonable safeguards for information handled by the site, but no internet transmission or storage system can be guaranteed completely secure.</p>
+  </section>
+  <section class="terms-section">
+    <h2>Your privacy requests</h2>
+    <p>Subject to applicable law, you may ask to be informed about, access, or correct your information; object to or request blocking or erasure of information; withdraw consent; request data portability where applicable; or raise a concern about how it is handled. You may also file a complaint with the National Privacy Commission. Use our <a href="{{ url_for('contact') }}">Contact page</a> and put "Privacy Request" in your message. We may ask for information needed to verify your identity and locate the relevant record before acting. If you withdraw consent for information needed to handle your inquiry or application, we may be unable to continue processing that request.</p>
+    <p>Personal information is handled under applicable Philippine privacy law, including the <a href="https://privacy.gov.ph/data-privacy-act/" target="_blank" rel="noopener">Data Privacy Act of 2012</a>.</p>
+  </section>
+  <section class="terms-section">
+    <h2>Changes and contact</h2>
+    <p>We may update this notice when our practices change. The effective date above identifies the current version. For questions or privacy requests, contact us through the <a href="{{ url_for('contact') }}">Contact page</a>.</p>
+  </section>
+  <a class="button button-quiet" href="{{ url_for('terms') }}">Read Terms and Conditions</a>
+</section>
+{% endblock %}

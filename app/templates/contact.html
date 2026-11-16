@@ -43,10 +43,10 @@
         <textarea name="message" required minlength="10" maxlength="2000" rows="5" data-normalize-whitespace placeholder="Tell us about your preferred location, budget, or questions." aria-describedby="message-help">{{ values.get('message', '') }}</textarea>
         <span class="field-hint" id="message-help">Please include at least 10 characters (up to 2,000).</span>
       </label>
-      <label class="consent"><input type="checkbox" name="consent" value="yes" required {% if values.get('consent') == 'yes' %}checked{% endif %}> I consent to share these contact details for rental inquiry purposes.</label>
+      <label class="consent"><input type="checkbox" name="consent" value="yes" required {% if values.get('consent') == 'yes' %}checked{% endif %}> I have read the <a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">Privacy Notice</a> and consent to use my contact details for this rental inquiry.</label>
       <label class="consent terms-acceptance">
         <input type="checkbox" name="terms" value="yes" required {% if values.get('terms') == 'yes' %}checked{% endif %}>
-        <span>I agree to the <a href="{{ url_for('terms') }}" target="_blank" rel="noopener">Draft Terms and Conditions</a>.</span>
+        <span>I agree to the <a href="{{ url_for('terms') }}" target="_blank" rel="noopener">Terms and Conditions</a>.</span>
       </label>
       <button class="button button-full" type="submit">Submit inquiry {{ icon('arrow-right', 16) }}</button>
     </form>

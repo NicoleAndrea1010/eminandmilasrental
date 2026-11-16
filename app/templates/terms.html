@@ -2,44 +2,46 @@
 {% block title %}Terms and Conditions | Emin & Mila's Rentals{% endblock %}
 {% block content %}
 <section class="section wrap terms-page">
-  <span class="eyebrow">PLEASE READ</span>
+  <span class="eyebrow">EMIN &amp; MILA'S RENTALS</span>
   <h1>Terms and Conditions</h1>
-  <div class="notice notice-error terms-draft" role="note">
-    <strong>Draft for review — not approved legal terms.</strong>
-    This wording must be reviewed and approved before the site is used to accept
-    applications or agreements.
-  </div>
+  <p class="terms-updated">Effective November 17, 2026</p>
+  <p>These Terms and Conditions apply to your use of the Emin &amp; Mila's Rentals website. The website is operated by Cernan Anthony L. Manalo, the landlord responsible for the rental homes presented here in Laguna, Philippines ("we," "us," or "our").</p>
+
   <section class="terms-section">
-    <h2>Using this website</h2>
-    <p>This website lets you browse rental listings and send questions,
-      application details, or viewing requests. Please provide accurate
-      information and use the website only for lawful purposes.</p>
+    <h2>1. Eligibility and accurate information</h2>
+    <p>You must be at least 18 years old and legally capable of entering a rental agreement to submit a rental application. We do not ask for or store your date of birth. By submitting an application, you confirm that you meet this requirement. You agree to provide accurate, current information and to update us if it changes.</p>
   </section>
   <section class="terms-section">
-    <h2>Listings and availability</h2>
-    <p>Listing details, prices, availability, and images may change. A listing
-      or submitted inquiry does not reserve a home, guarantee approval, or create
-      a lease. A rental agreement exists only when the parties complete and sign
-      the applicable agreement.</p>
+    <h2>2. Listings and availability</h2>
+    <p>We work to keep listing descriptions, prices, images, and availability current. They may change or become unavailable without notice. Contact us to confirm details before making plans or commitments. A listing is not an offer that guarantees availability or a particular rental outcome.</p>
   </section>
   <section class="terms-section">
-    <h2>Applications and viewing requests</h2>
-    <p>Submitting an application or viewing request does not guarantee
-      acceptance or a confirmed appointment. We will contact you to discuss
-      next steps and confirm arrangements.</p>
+    <h2>3. Inquiries, applications, and viewings</h2>
+    <p>Submitting an inquiry or application does not reserve a home, guarantee approval, or create a lease. A viewing request is not an appointment until we confirm it with you. A tenancy exists only under a separate rental agreement accepted by the parties.</p>
   </section>
   <section class="terms-section">
-    <h2>Information you submit</h2>
-    <p>Contact details and information in your inquiry or application are used
-      to respond to you and process your request. Review the final privacy
-      information before publishing; do not submit information that is not
-      requested or necessary.</p>
+    <h2>4. Rent and other payments</h2>
+    <p>This website does not accept rent, deposits, booking fees, or other payments. Payment amounts, due dates, and methods must be set out separately in an agreed rental arrangement. Do not send payment-card details or money through website forms. Confirm payment instructions with us before paying.</p>
   </section>
   <section class="terms-section">
-    <h2>Cookies and site availability</h2>
-    <p>The site uses a necessary session cookie to support form security. We aim
-      to keep the service available, but listings or features may be unavailable
-      during maintenance or service interruptions.</p>
+    <h2>5. Acceptable use</h2>
+    <p>Use the website lawfully and only for genuine rental-related inquiries. Do not submit false information, impersonate another person, interfere with the website, or attempt to access information or systems you are not authorized to use. You may submit another person's personal information only if you are authorized to do so and have informed them.</p>
+  </section>
+  <section class="terms-section">
+    <h2>6. Personal information</h2>
+    <p>Our <a href="{{ url_for('privacy') }}">Privacy Notice</a> explains the personal information collected through inquiries, viewing requests, and applications and how we use it. The forms require you to review the notice and provide the applicable consent before submitting a request.</p>
+  </section>
+  <section class="terms-section">
+    <h2>7. Website content and availability</h2>
+    <p>Respect intellectual property rights in website content. Unless authorized or permitted by law, do not copy or republish site materials. We may update, suspend, or remove website features. Nothing in these terms limits a right or remedy that cannot legally be limited.</p>
+  </section>
+  <section class="terms-section">
+    <h2>8. Governing law and changes</h2>
+    <p>These terms are governed by the laws of the Republic of the Philippines, subject to mandatory rights and protections under applicable law. We may update these terms by posting a revised version with a new effective date. Continued use after an update means the updated terms apply to future use.</p>
+  </section>
+  <section class="terms-section">
+    <h2>Contact</h2>
+    <p>For questions about these terms, use our <a href="{{ url_for('contact') }}">Contact page</a> and include "Terms question" in your message.</p>
   </section>
   <a class="button button-quiet" href="{{ url_for('contact') }}">Back to contact</a>
 </section>

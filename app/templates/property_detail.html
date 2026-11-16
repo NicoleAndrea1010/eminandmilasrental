@@ -99,10 +99,10 @@
         <textarea name="message" maxlength="2000" rows="3" data-normalize-whitespace>{{ form_values.get('message', '') }}</textarea>
       </label>
     </div>
-    <label class="consent"><input type="checkbox" name="consent" value="yes" required {% if form_values.get('consent') == 'yes' %}checked{% endif %}> I consent to share these contact details for rental inquiry purposes.</label>
+    <label class="consent"><input type="checkbox" name="consent" value="yes" required {% if form_values.get('consent') == 'yes' %}checked{% endif %}> I have read the <a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">Privacy Notice</a> and consent to use my information to handle this viewing request.</label>
     <label class="consent terms-acceptance">
       <input type="checkbox" name="terms" value="yes" required {% if form_values.get('terms') == 'yes' %}checked{% endif %}>
-      <span>I agree to the <a href="{{ url_for('terms') }}" target="_blank" rel="noopener">Draft Terms and Conditions</a>.</span>
+      <span>I agree to the <a href="{{ url_for('terms') }}" target="_blank" rel="noopener">Terms and Conditions</a>.</span>
     </label>
     <button class="button button-full" type="submit">Submit viewing request {{ icon('arrow-right', 16) }}</button>
   </form>
@@ -145,10 +145,11 @@
         <textarea name="notes" maxlength="2000" rows="3" data-normalize-whitespace>{{ form_values.get('notes', '') }}</textarea>
       </label>
     </div>
-    <label class="consent"><input type="checkbox" name="consent" value="yes" required {% if form_values.get('consent') == 'yes' %}checked{% endif %}> I confirm that the information provided is accurate and consent to processing my rental application.</label>
+    <label class="consent"><input type="checkbox" name="adult_confirmation" value="yes" required {% if form_values.get('adult_confirmation') == 'yes' %}checked{% endif %}> I confirm that I am at least 18 years old and legally able to apply for a rental.</label>
+    <label class="consent"><input type="checkbox" name="consent" value="yes" required {% if form_values.get('consent') == 'yes' %}checked{% endif %}> I have read the <a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">Privacy Notice</a> and consent to processing my information for this rental application.</label>
     <label class="consent terms-acceptance">
       <input type="checkbox" name="terms" value="yes" required {% if form_values.get('terms') == 'yes' %}checked{% endif %}>
-      <span>I agree to the <a href="{{ url_for('terms') }}" target="_blank" rel="noopener">Draft Terms and Conditions</a>.</span>
+      <span>I agree to the <a href="{{ url_for('terms') }}" target="_blank" rel="noopener">Terms and Conditions</a>.</span>
     </label>
     <button class="button button-full" type="submit">Submit application {{ icon('arrow-right', 16) }}</button>
   </form>

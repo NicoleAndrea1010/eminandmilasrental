@@ -221,10 +221,9 @@ input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="
 .field-label .icon { color: #8c7650; }
 .consent { display: flex; grid-template-columns: auto 1fr; align-items: start; gap: 10px; color: #586760; font-size: 12px; font-weight: 500; line-height: 1.5; }
 .consent input { width: 16px; min-height: 16px; height: 16px; margin-top: 2px; accent-color: var(--forest); }
-.terms-acceptance a { color: var(--forest); font-weight: 750; text-decoration: underline; text-underline-offset: 2px; }
+.consent a { color: var(--forest); font-weight: 750; text-decoration: underline; text-underline-offset: 2px; }
 .terms-page { max-width: 880px; padding-top: 64px; }
 .terms-page h1 { margin: 10px 0 20px; font-family: var(--display); font-size: clamp(38px, 5vw, 54px); line-height: 1.1; }
-.terms-draft { margin-bottom: 10px; }
 .terms-updated { color: var(--muted); font-size: 12px; }
 .terms-section { padding: 22px 0; border-bottom: 1px solid var(--line); }
 .terms-section h2 { margin-bottom: 9px; font-size: 21px; }
